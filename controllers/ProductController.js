@@ -1,6 +1,8 @@
 import Product from "../models/Product.js";
 import fs from "fs";
 import path from "path";
+import { notificationEmitter } from "../events/notificationEmitter.js";
+import User from "../models/User.js";
 import cacheService from "../services/cacheService.js";
 
 // helper function for invalide cache
@@ -33,7 +35,17 @@ export const createProduct = async (req, res, next) => {
     const product = new Product(data);
     await product.save();
 
-    await invalidateProductCache();
+    const users = await User.find({ role: "user" }, "_id");
+    console.log("Users to notify:", users);
+    const usersToNotify = users.map(u => u._id);
+
+    notificationEmitter.emit("newProduct", {
+      sellerId: req.user.id,
+      productName: product.title,
+      usersToNotify
+    });
+
+    // await invalidateProductCache();
     res.status(201).json({ message: "Product created successfully", data: product });
   } catch (error) {
     if (req.files) {
