@@ -9,9 +9,16 @@ export default defineConfig([
     extends: ["js/recommended"],
     languageOptions: {
       globals: {
-        ...globals.node,      // Add this line
-        ...globals.mocha,     // Add this line for test files
+        ...globals.node,
         ...globals.browser,
+      },
+    },
+  },
+  {
+    files: ["test/**/*.js", "**/*.test.js"],
+    languageOptions: {
+      globals: {
+        ...globals.mocha,
       },
     },
   },
