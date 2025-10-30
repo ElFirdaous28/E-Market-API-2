@@ -5,32 +5,27 @@ import { notificationEmitter } from '../events/notificationEmitter.js';
 import Product from '../models/Product.js';
 
 export const createOrder = async (req, res, next) => {
-  // Detect if transactions are supported
-  const supportsTransactions = mongoose.connection.db?.admin && 
-    await mongoose.connection.db.admin().replSetGetStatus().catch(() => false);
-  
   let session = null;
   
-  if (supportsTransactions) {
-    session = await mongoose.startSession();
-    session.startTransaction();
-  }
   try {
+    // Only use transactions in production or when explicitly supported
+    if (process.env.NODE_ENV === 'production') {
+      session = await mongoose.startSession();
+      session.startTransaction();
+    }
+
     const userId = req.user.id;
     const couponCodes = req.body.coupons || [];
 
     const result = await OrderService.createOrder(userId, couponCodes, session);
-    console.log('Order data:', result.order);
-
-    //récupérer les seller_id depuis les products de la commande
+    
     const productIds = result.order.items.map((i) => i.productId);
     const products = await Product.find(
       { _id: { $in: productIds } },
       'seller_id'
     );
-    const sellerIds = [...new Set(products.map((p) => p.seller_id.toString()))]; // ids uniques
+    const sellerIds = [...new Set(products.map((p) => p.seller_id.toString()))];
 
-    //notification pour chaque vendeur
     sellerIds.forEach((sellerId) => {
       notificationEmitter.emit('newOrder', {
         orderId: result.order._id,
@@ -39,7 +34,9 @@ export const createOrder = async (req, res, next) => {
       });
     });
 
-    await session.commitTransaction();
+    if (session) {
+      await session.commitTransaction();
+    }
 
     res.status(201).json({
       success: true,
@@ -47,12 +44,17 @@ export const createOrder = async (req, res, next) => {
       data: { ...result },
     });
   } catch (error) {
-    await session.abortTransaction();
+    if (session) {
+      await session.abortTransaction();
+    }
     next(error);
   } finally {
-    session.endSession();
+    if (session) {
+      session.endSession();
+    }
   }
 };
+
 
 export const updateOrderStatus = async (req, res, next) => {
   try {

@@ -5,7 +5,6 @@ import DiscountService from './discountService.js';
 
 class OrderService {
   static async createOrder(userId, couponCodes, session = null ) {
-    const options = session ? { session } : {};
     const cart = await Cart.findOne({ userId })
       .populate('items.productId')
       .session(session);
@@ -63,9 +62,7 @@ class OrderService {
           appliedCoupons: appliedCouponIds,
           status: 'pending',
         },
-      ],
-      options
-    );
+      ]);
 
     // Mark coupons as used
     for (const c of validCoupons) {
