@@ -21,10 +21,13 @@ jobs:
         run: npm ci
 
       - name: Run ESLint
-        run: npm run lint .
+        run: npm run lint . || true
       
       - name: Run Prettier
         run: npm run format
+
+      - name: Run ESLint again (final check)
+        run: npm run lint .
 
       - name: Run tests (Mocha + Chai + Supertest)
         run: npm test
