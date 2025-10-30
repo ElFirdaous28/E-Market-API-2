@@ -3,7 +3,6 @@ import request from 'supertest';
 import mongoose from 'mongoose';
 import app from '../../server.js';
 import { userFactory } from '../../factories/userFactory.js';
-import { reviewFactory } from '../../factories/reviewFactory.js';
 import Review from '../../models/Review.js';
 import Product from '../../models/Product.js';
 import Order from '../../models/Order.js';
