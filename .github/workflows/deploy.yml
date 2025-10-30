@@ -6,17 +6,47 @@ on:
       - merge
 
 jobs:
-  build:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Run tests
+        env:
+          DB_URI: mongodb://localhost:27017/emarket_test_db
+          JWT_SECRET: ${{secrets.JWT_SECRET}}
+          REDIS_URL: redis://localhost:6379
+          NODE_ENV: test
+        run: npm test
+
+  deploy:
+    needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: Install AWS CLI
-        run: |
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
-      - uses: akhileshns/heroku-deploy@v3.14.15
+      - uses: actions/checkout@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws_access_key_id: ${{secrets.AWS_ACCESS_KEY_ID}}
-          aws_secret_access_key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          aws_region: ${{secrets.AWS_REGION}}
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: ${{secrets.AWS_REGION}}
+      - name: Deploy to AWS
+        run: |
+          echo "Deploying to AWS..."
+          aws ecs update-service --cluster ${{secrets.ECS_CLUSTER}} --service ${{secrets.ECS_SERVICE}} --force-new-deployment
+
+
