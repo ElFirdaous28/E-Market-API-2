@@ -35,6 +35,7 @@ Une API REST complète pour une plateforme e-commerce construite avec Node.js, E
 ## 🛠️ Technologies utilisées
 
 ### Backend
+
 - **Node.js** - Runtime JavaScript
 - **Express.js** - Framework web
 - **MongoDB** - Base de données NoSQL
@@ -42,11 +43,13 @@ Une API REST complète pour une plateforme e-commerce construite avec Node.js, E
 - **Redis** - Cache en mémoire
 
 ### Authentification & Sécurité
+
 - **JWT** - JSON Web Tokens
 - **bcryptjs** - Hachage des mots de passe
 - **Rate limiting** - Protection contre les attaques
 
 ### Outils de développement
+
 - **Nodemon** - Rechargement automatique
 - **Swagger** - Documentation API
 - **Winston** - Logging
@@ -54,6 +57,7 @@ Une API REST complète pour une plateforme e-commerce construite avec Node.js, E
 - **Yup** - Validation des données
 
 ### Tests
+
 - **Mocha** - Framework de test
 - **Chai** - Assertions
 - **Supertest** - Tests HTTP
@@ -70,15 +74,18 @@ Une API REST complète pour une plateforme e-commerce construite avec Node.js, E
 
 ### 1. Cloner le repository
 
-````
+```
 git clone https://github.com/ElFirdaous28/E-Market-API-2.git
 cd E-Market-API-2
 npm install
 cp .env.example .env
-````
+```
+
 ## ⚙️ Configuration
+
 ### Éditer le fichier .env avec vos paramètres :
-````
+
+```
 # Server
 PORT=3000
 
@@ -92,28 +99,35 @@ JWT_SECRET=votre_jwt_secret_super_securise
 # Redis
 REDIS_URL=redis://localhost:6379
 
-````
+```
+
 ### Services requis
+
 MongoDB
-````
+
+```
 # Installation sur Ubuntu/Debian
 sudo apt-get install mongodb
 
 # Démarrer MongoDB
 sudo systemctl start mongodb
 sudo systemctl enable mongodb
-````
+```
+
 Redis
-````
+
+```
 # Installation sur Ubuntu/Debian
 sudo apt-get install redis-server
 
 # Démarrer Redis
 sudo systemctl start redis-server
 sudo systemctl enable redis-server
-````
+```
+
 ## 🎯 Utilisation
-````
+
+```
 # Démarrer en mode développement
 npm run devStart
 
@@ -122,15 +136,21 @@ npm run seed
 
 # Réinitialiser la base de données
 npm run reset-db
-````
+```
+
 ## 📚 API Documentation
+
 La documentation Swagger est disponible à l'adresse :
-````
+
+```
 http://localhost:3000/api/docs
-````
+```
+
 ## 🧪 Tests
+
 Exécuter tous les tests
-````
+
+```
 # Tests unitaires
 npm test
 
@@ -142,15 +162,11 @@ npm run test:all
 
 # Tests avec couverture de code
 npm run coverage
-````
+```
+
 ## 👥 Auteurs
 
 - **ElFirdaous28**
 - **Ayoub-fetti**
 - **samirakibous**
 - **wassim205**
-
-
-
-
-

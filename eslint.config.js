@@ -1,12 +1,12 @@
-import js from "@eslint/js";
-import globals from "globals";
-import { defineConfig } from "eslint/config";
+import js from '@eslint/js';
+import globals from 'globals';
+import { defineConfig } from 'eslint/config';
 
 export default defineConfig([
   {
-    files: ["**/*.{js,mjs,cjs}"],
+    files: ['**/*.{js,mjs,cjs}'],
     plugins: { js },
-    extends: ["js/recommended"],
+    extends: ['js/recommended'],
     languageOptions: {
       globals: {
         ...globals.node,
@@ -15,7 +15,7 @@ export default defineConfig([
     },
   },
   {
-    files: ["test/**/*.js", "**/*.test.js"],
+    files: ['test/**/*.js', '**/*.test.js'],
     languageOptions: {
       globals: {
         ...globals.mocha,

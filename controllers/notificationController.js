@@ -1,11 +1,13 @@
 // controllers/notificationController.js
-import Notification from "../models/Notification.js";
+import Notification from '../models/Notification.js';
 
 export const getNotifications = async (req, res, next) => {
   try {
-    const notifications = await Notification.find({ userId: req.user.id }).sort({ createdAt: -1 });
-     res.status(200).json({
-      message: "Notifications retrieved successfully",
+    const notifications = await Notification.find({ userId: req.user.id }).sort(
+      { createdAt: -1 }
+    );
+    res.status(200).json({
+      message: 'Notifications retrieved successfully',
       data: { notifications },
     });
   } catch (err) {
@@ -20,9 +22,10 @@ export const markAsRead = async (req, res, next) => {
       { read: true },
       { new: true }
     );
-    if (!notification) return res.status(404).json({ message: "Notification not found" });
+    if (!notification)
+      return res.status(404).json({ message: 'Notification not found' });
     res.status(200).json({
-      message: "Notification marked as read",
+      message: 'Notification marked as read',
       data: { notification },
     });
   } catch (err) {

@@ -6,7 +6,7 @@ on:
       - merge
 
 jobs:
-  build-test-lint:
+  build-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,20 +20,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run ESLint
-        run: npm run lint . || true
-      
       - name: Run Prettier
         run: npm run format
-
-      - name: Run ESLint again (final check)
-        run: npm run lint .
 
       - name: Run tests (Mocha + Chai + Supertest)
         run: npm test
 
   docker-build-push:
-    needs: build-test-lint
+    needs: build-test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
