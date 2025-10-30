@@ -5,9 +5,16 @@ import { notificationEmitter } from '../events/notificationEmitter.js';
 import Product from '../models/Product.js';
 
 export const createOrder = async (req, res, next) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+  // Detect if transactions are supported
+  const supportsTransactions = mongoose.connection.db?.admin && 
+    await mongoose.connection.db.admin().replSetGetStatus().catch(() => false);
+  
+  let session = null;
+  
+  if (supportsTransactions) {
+    session = await mongoose.startSession();
+    session.startTransaction();
+  }
   try {
     const userId = req.user.id;
     const couponCodes = req.body.coupons || [];

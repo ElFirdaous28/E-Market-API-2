@@ -4,10 +4,12 @@ import StockService from './StockService.js';
 import DiscountService from './discountService.js';
 
 class OrderService {
-  static async createOrder(userId, couponCodes, session) {
+  static async createOrder(userId, couponCodes, session = null ) {
+    const options = session ? { session } : {};
     const cart = await Cart.findOne({ userId })
       .populate('items.productId')
       .session(session);
+
     if (!cart || !cart.items.length) throw new Error('Cart is empty');
 
     // Check & decrease stock
@@ -62,7 +64,7 @@ class OrderService {
           status: 'pending',
         },
       ],
-      { session }
+      options
     );
 
     // Mark coupons as used
