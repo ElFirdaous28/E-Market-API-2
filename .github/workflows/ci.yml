@@ -11,7 +11,6 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
     
-    # Add both MongoDB and Redis as service containers
     services:
       mongodb:
         image: mongo:7.0
@@ -37,6 +36,10 @@ jobs:
       NODE_ENV: test
       DB_URI: mongodb://localhost:27017/E_Market_API_Test
       REDIS_URL: redis://localhost:6379
+      # Add these critical env vars for your app
+      JWT_SECRET: test-secret-key-for-ci
+      JWT_EXPIRES_IN: 1d
+      BCRYPT_ROUNDS: 10
     
     steps:
       - name: Checkout code
@@ -49,6 +52,14 @@ jobs:
       
       - name: Install dependencies
         run: npm ci
+      
+      # Wait a bit to ensure services are fully ready
+      - name: Wait for services
+        run: |
+          echo "Waiting for MongoDB..."
+          timeout 30 bash -c 'until mongosh --eval "db.runCommand({ping: 1})" mongodb://localhost:27017/test; do sleep 2; done'
+          echo "Waiting for Redis..."
+          timeout 30 bash -c 'until redis-cli -h localhost ping; do sleep 2; done'
       
       - name: Run tests
         run: npm run test
