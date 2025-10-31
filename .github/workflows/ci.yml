@@ -28,7 +28,7 @@ jobs:
       
       # run all tests
       - name: Run tests
-        run: npm run test:all
+        run: npm run test
 
       # run coverage test
       - name: Run coverage test
