@@ -11,6 +11,10 @@ jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
+    env:
+        NODE_ENV: test
+        MONGO_URI: ${{ secrets.DB_URI }}
+
     steps:
       # checkout  repo
       - name: checkout code
