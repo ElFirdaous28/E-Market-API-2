@@ -17,14 +17,13 @@ jobs:
         image: prismagraphql/mongo-single-replica:4.4.3-bionic
         ports:
           - 27017:27017
+        # Remove authentication for simpler testing
         env:
-          MONGO_INITDB_ROOT_USERNAME: admin
-          MONGO_INITDB_ROOT_PASSWORD: password
           INIT_WAIT_SEC: 3
 
     env:
       NODE_ENV: test
-      DB_URI: mongodb://admin:password@localhost:27017/E_Market_API_Test?replicaSet=rs0&authSource=admin
+      DB_URI: mongodb://localhost:27017/E_Market_API_Test?replicaSet=rs0
       JWT_SECRET: your-test-jwt-secret-change-in-production
       JWT_EXPIRE: 30m
       PORT: 3000
@@ -55,7 +54,7 @@ jobs:
           
           # Wait for replica set to be ready
           echo "Waiting for MongoDB replica set..."
-          until mongosh "mongodb://admin:password@localhost:27017/admin?replicaSet=rs0" --eval "rs.status().ok" --quiet; do
+          until mongosh "mongodb://localhost:27017/admin?replicaSet=rs0" --eval "rs.status().ok" --quiet; do
             echo "Replica set not ready yet..."
             sleep 2
           done
@@ -74,10 +73,6 @@ jobs:
             })
             .then(() => {
               console.log('✅ Database ping successful');
-              return mongoose.connection.db.listCollections().toArray();
-            })
-            .then(collections => {
-              console.log('📊 Collections:', collections.map(c => c.name));
               process.exit(0);
             })
             .catch(err => {
