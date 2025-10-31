@@ -18,7 +18,6 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --replSet rs0
           --bind_ip_all
         env:
           MONGO_INITDB_ROOT_USERNAME: admin
@@ -26,7 +25,7 @@ jobs:
 
     env:
       NODE_ENV: test
-      DB_URI: mongodb://admin:password@localhost:27017/E_Market_API_Test?replicaSet=rs0&authSource=admin
+      DB_URI: mongodb://admin:password@localhost:27017/E_Market_API_Test?authSource=admin
       JWT_SECRET: your-test-jwt-secret-change-in-production
       JWT_EXPIRE: 30m
 
@@ -60,18 +59,40 @@ jobs:
             sleep 2
           done
           
-          # Initialize replica set
+          # Wait a bit more for MongoDB to be fully ready
+          sleep 5
+          
+          # Initialize replica set using mongosh
           echo "Initializing MongoDB replica set..."
-          mongosh "mongodb://admin:password@localhost:27017/admin" --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})"
+          mongosh "mongodb://admin:password@localhost:27017/admin" --eval "
+            try {
+              rs.status();
+              console.log('Replica set already initialized');
+            } catch (e) {
+              if (e.codeName === 'NoReplicationEnabled') {
+                console.log('Initializing new replica set...');
+                rs.initiate({
+                  _id: 'rs0',
+                  members: [
+                    { _id: 0, host: 'localhost:27017' }
+                  ]
+                });
+                console.log('Replica set initialized successfully');
+              } else {
+                throw e;
+              }
+            }
+          "
           
           # Wait for replica set to be ready
+          echo "Waiting for replica set to be ready..."
           until mongosh "mongodb://admin:password@localhost:27017/admin?replicaSet=rs0" --eval "rs.status().ok" --quiet; do
-            echo "Waiting for replica set to be ready..."
+            echo "Replica set not ready yet..."
             sleep 2
           done
           echo "MongoDB replica set is ready!"
       
-      # Create test environment file
+      # Create test environment file with replica set connection string
       - name: Create test environment file
         run: |
           cat > .env.test << EOF
