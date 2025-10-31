@@ -65,5 +65,5 @@ jobs:
       - name: Force ECS deployment
         run: |
           echo "🐳 New Docker image pushed to Docker Hub"
-          echo "🚀 Triggering ECS service update..."
+          echo "🚀 Triggering ECS service update...."
           aws ecs update-service --cluster ${{ secrets.ECS_CLUSTER }} --service ${{ secrets.ECS_SERVICE }} --force-new-deployment
