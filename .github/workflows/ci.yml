@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - "*"
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -16,13 +17,18 @@ jobs:
         image: mongo:latest
         ports:
           - 27017:27017
-      
+        options: >-
+          --health-cmd mongosh
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     env:
       NODE_ENV: test
       DB_URI: mongodb://localhost:27017/E_Market_API_Test
 
     steps:
-      # checkout  repo
+      # checkout repo
       - name: checkout code
         uses: actions/checkout@v4
 
@@ -32,9 +38,25 @@ jobs:
         with:
           node-version: 20
 
-      # install dependencies form packege.json cleanly
+      # install dependencies form package.json cleanly
       - name: Install dependencies
         run: npm ci
+      
+      # Wait for MongoDB to be ready
+      - name: Wait for MongoDB
+        run: |
+          # Install mongosh (MongoDB Shell) for health checks
+          curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
+          echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
+          sudo apt-get update
+          sudo apt-get install -y mongodb-mongosh
+          
+          # Wait for MongoDB connection
+          until mongosh --eval "db.adminCommand('ping')" localhost:27017/test --quiet; do
+            echo "Waiting for MongoDB..."
+            sleep 2
+          done
+          echo "MongoDB is ready!"
       
       # run all tests
       - name: Run tests
