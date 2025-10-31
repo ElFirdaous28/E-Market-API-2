@@ -36,9 +36,8 @@ jobs:
     
     env:
       NODE_ENV: test
-      DB_URI: mongodb://localhost:27017/E_Market_API_Test
+      DB_URI: mongodb://localhost:27017/E_Market_API_Test?replicaSet=rs0
       REDIS_URL: redis://localhost:6379
-      # Add these critical env vars for your app
       JWT_SECRET: test-secret-key-for-ci
       JWT_EXPIRES_IN: 1d
       BCRYPT_ROUNDS: 10
@@ -55,7 +54,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      # Wait a bit to ensure services are fully ready
       - name: Wait for services
         run: |
           echo "Waiting for MongoDB..."
@@ -63,10 +61,13 @@ jobs:
           echo "Waiting for Redis..."
           timeout 30 bash -c 'until nc -z localhost 6379; do sleep 2; done'
 
+      - name: Install MongoDB Shell
+        run: sudo apt-get update && sudo apt-get install -y mongodb-mongosh
+
       - name: Initiate Mongo replica set
-          run: |
-            sleep 5
-            mongo --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
+        run: |
+          sleep 5
+          mongosh --eval "rs.initiate({_id:'rs0',members:[{_id:0,host:'localhost:27017'}]})"
 
       - name: Run tests
         run: npm run test
