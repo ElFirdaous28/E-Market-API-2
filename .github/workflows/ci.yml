@@ -14,18 +14,17 @@ jobs:
 
     services:
       mongodb:
-        image: mongo:latest
+        image: prismagraphql/mongo-single-replica:4.4.3-bionic
         ports:
           - 27017:27017
-        options: >-
-          --bind_ip_all
         env:
           MONGO_INITDB_ROOT_USERNAME: admin
           MONGO_INITDB_ROOT_PASSWORD: password
+          INIT_WAIT_SEC: 3
 
     env:
       NODE_ENV: test
-      DB_URI: mongodb://admin:password@localhost:27017/E_Market_API_Test?authSource=admin
+      DB_URI: mongodb://admin:password@localhost:27017/E_Market_API_Test?replicaSet=rs0&authSource=admin
       JWT_SECRET: your-test-jwt-secret-change-in-production
       JWT_EXPIRE: 30m
 
@@ -44,8 +43,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      # Wait for MongoDB to be ready and init replica set
-      - name: Setup MongoDB Replica Set
+      # Wait for MongoDB replica set to be ready
+      - name: Wait for MongoDB Replica Set
         run: |
           # Install mongosh
           curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
@@ -53,46 +52,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y mongodb-mongosh
           
-          # Wait for MongoDB
-          until nc -z localhost 27017; do
-            echo "Waiting for MongoDB..."
-            sleep 2
-          done
-          
-          # Wait a bit more for MongoDB to be fully ready
-          sleep 5
-          
-          # Initialize replica set using mongosh
-          echo "Initializing MongoDB replica set..."
-          mongosh "mongodb://admin:password@localhost:27017/admin" --eval "
-            try {
-              rs.status();
-              console.log('Replica set already initialized');
-            } catch (e) {
-              if (e.codeName === 'NoReplicationEnabled') {
-                console.log('Initializing new replica set...');
-                rs.initiate({
-                  _id: 'rs0',
-                  members: [
-                    { _id: 0, host: 'localhost:27017' }
-                  ]
-                });
-                console.log('Replica set initialized successfully');
-              } else {
-                throw e;
-              }
-            }
-          "
-          
           # Wait for replica set to be ready
-          echo "Waiting for replica set to be ready..."
+          echo "Waiting for MongoDB replica set..."
           until mongosh "mongodb://admin:password@localhost:27017/admin?replicaSet=rs0" --eval "rs.status().ok" --quiet; do
             echo "Replica set not ready yet..."
             sleep 2
           done
           echo "MongoDB replica set is ready!"
       
-      # Create test environment file with replica set connection string
+      # Create test environment file
       - name: Create test environment file
         run: |
           cat > .env.test << EOF
