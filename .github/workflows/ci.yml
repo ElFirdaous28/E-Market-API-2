@@ -26,6 +26,9 @@ jobs:
     env:
       NODE_ENV: test
       DB_URI: mongodb://localhost:27017/E_Market_API_Test
+      JWT_SECRET: your-test-jwt-secret-change-in-production
+      JWT_EXPIRE: 30m
+      # Add any other required environment variables
 
     steps:
       # checkout repo
@@ -57,6 +60,18 @@ jobs:
             sleep 2
           done
           echo "MongoDB is ready!"
+      
+      # Create test environment file
+      - name: Create test environment file
+        run: |
+          cat > .env.test << EOF
+          NODE_ENV=test
+          DB_URI=mongodb://localhost:27017/E_Market_API_Test
+          JWT_SECRET=your-test-jwt-secret-change-in-production
+          JWT_EXPIRE=30m
+          PORT=3000
+          # Add any other environment variables your app needs
+          EOF
       
       # run all tests
       - name: Run tests
