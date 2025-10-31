@@ -18,17 +18,17 @@ jobs:
         ports:
           - 27017:27017
         options: >-
-          --health-cmd mongosh
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --replSet rs0
+          --bind_ip_all
+        env:
+          MONGO_INITDB_ROOT_USERNAME: admin
+          MONGO_INITDB_ROOT_PASSWORD: password
 
     env:
       NODE_ENV: test
-      DB_URI: mongodb://localhost:27017/E_Market_API_Test
+      DB_URI: mongodb://admin:password@localhost:27017/E_Market_API_Test?replicaSet=rs0&authSource=admin
       JWT_SECRET: your-test-jwt-secret-change-in-production
       JWT_EXPIRE: 30m
-      # Add any other required environment variables
 
     steps:
       # checkout repo
@@ -45,32 +45,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
       
-      # Wait for MongoDB to be ready
-      - name: Wait for MongoDB
+      # Wait for MongoDB to be ready and init replica set
+      - name: Setup MongoDB Replica Set
         run: |
-          # Install mongosh (MongoDB Shell) for health checks
+          # Install mongosh
           curl -fsSL https://pgp.mongodb.com/server-7.0.asc | sudo gpg -o /usr/share/keyrings/mongodb-server-7.0.gpg --dearmor
           echo "deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-7.0.gpg ] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/7.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-7.0.list
           sudo apt-get update
           sudo apt-get install -y mongodb-mongosh
           
-          # Wait for MongoDB connection
-          until mongosh --eval "db.adminCommand('ping')" localhost:27017/test --quiet; do
+          # Wait for MongoDB
+          until nc -z localhost 27017; do
             echo "Waiting for MongoDB..."
             sleep 2
           done
-          echo "MongoDB is ready!"
+          
+          # Initialize replica set
+          echo "Initializing MongoDB replica set..."
+          mongosh "mongodb://admin:password@localhost:27017/admin" --eval "rs.initiate({_id: 'rs0', members: [{_id: 0, host: 'localhost:27017'}]})"
+          
+          # Wait for replica set to be ready
+          until mongosh "mongodb://admin:password@localhost:27017/admin?replicaSet=rs0" --eval "rs.status().ok" --quiet; do
+            echo "Waiting for replica set to be ready..."
+            sleep 2
+          done
+          echo "MongoDB replica set is ready!"
       
       # Create test environment file
       - name: Create test environment file
         run: |
           cat > .env.test << EOF
           NODE_ENV=test
-          DB_URI=mongodb://localhost:27017/E_Market_API_Test
+          DB_URI=mongodb://admin:password@localhost:27017/E_Market_API_Test?replicaSet=rs0&authSource=admin
           JWT_SECRET=your-test-jwt-secret-change-in-production
           JWT_EXPIRE=30m
           PORT=3000
-          # Add any other environment variables your app needs
           EOF
       
       # run all tests
