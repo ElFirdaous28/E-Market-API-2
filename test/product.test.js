@@ -96,4 +96,37 @@ describe('Product API', function () {
       }
     });
   });
+
+   describe('POST /api/products', () => {
+    it('shouldnt create a new product without valid token ', async () => {
+      try {
+        const res = await request(app)
+          .post('/api/products')
+          .set('Authorization',`Bearer hdhdhdfijfjf`)
+          .send({
+            title: 'product 1',
+            description: 'some text',
+            price: 20,
+            stock: 10,
+            categories: [category._id],
+            seller_id: user._id,
+          });
+
+        // // Log the full response body in case of failure
+        // if (res.status !== 201) {
+        //   console.error('Product creation failed:', res.body);
+        // }
+
+        expect(res.status).to.equal(401);
+        expect(res.body).to.have.property(
+          'message',
+          'Invalid or expired token'
+        );
+        // expect(res.body).to.have.property('data');
+      } catch (err) {
+        console.error('Test error:', err);
+        throw err;
+      }
+    });
+  });
 });
