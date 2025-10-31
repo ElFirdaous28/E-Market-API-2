@@ -13,7 +13,7 @@ jobs:
 
     env:
         NODE_ENV: test
-        DB_URI: ${{ secrets.DB_URI }}
+        DB_URI: mongodb://localhost:27017/E_Market_API_Test
 
     steps:
       # checkout  repo
