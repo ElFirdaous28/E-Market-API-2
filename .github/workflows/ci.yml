@@ -1,0 +1,39 @@
+name: CI - E-Market MERN API
+
+on:
+  push:
+    branches:
+      - "*"
+  pull_request:
+    branches:
+      - "*"
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # checkout  repo
+      - name: checkout code
+        uses: actions/checkout@v4
+
+      # install Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # install dependencies form packege.json cleanly
+      - name: Install dependencies
+        run: npm ci
+      
+      # run all tests
+      - name: Run tests
+        run: npm run test:all
+
+      # run coverage test
+      - name: Run coverage test
+        run: npm run coverage
+      
+      # Verify the Dockerfile builds successfully
+      - name: Build Docker image
+        run: docker build -t mern-api-image .
