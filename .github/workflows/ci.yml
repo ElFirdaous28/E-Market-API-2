@@ -11,13 +11,13 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Overall job timeout
 
     services:
       mongodb:
         image: prismagraphql/mongo-single-replica:4.4.3-bionic
         ports:
           - 27017:27017
-        # Remove authentication for simpler testing
         env:
           INIT_WAIT_SEC: 3
 
@@ -66,7 +66,12 @@ jobs:
           node -e "
           const mongoose = require('mongoose');
           console.log('Connecting to:', process.env.DB_URI);
-          mongoose.connect(process.env.DB_URI)
+          mongoose.connect(process.env.DB_URI, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            serverSelectionTimeoutMS: 30000,
+            socketTimeoutMS: 45000,
+          })
             .then(() => {
               console.log('✅ Database connected successfully');
               return mongoose.connection.db.admin().command({ ping: 1 });
@@ -92,11 +97,11 @@ jobs:
           PORT=$PORT
           EOF
       
-      # run all tests
+      # run all tests with longer timeout
       - name: Run tests
         run: npm run test
 
-      # run coverage test
+      # run coverage test with longer timeout
       - name: Run coverage test
         run: npm run coverage
       
