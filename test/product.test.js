@@ -9,7 +9,7 @@ import { categoryFactory } from "../factories/categoryFactory.js";
 const { expect } = chai;
 
 describe("Product API", function () {
-  // this.timeout(30000);
+  this.timeout(10000);
 
   let testConnection;
   let token;
