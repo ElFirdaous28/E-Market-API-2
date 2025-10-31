@@ -13,7 +13,7 @@ jobs:
 
     env:
         NODE_ENV: test
-        MONGO_URI: ${{ secrets.DB_URI }}
+        DB_URI: ${{ secrets.DB_URI }}
 
     steps:
       # checkout  repo
