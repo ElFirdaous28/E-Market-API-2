@@ -17,14 +17,12 @@ jobs:
         image: mongo:7.0
         ports:
           - 27017:27017
-        # ✅ Start MongoDB with replSet using CMD instead of unsupported flags
-        command: ["--replSet", "rs0", "--bind_ip_all"]
         options: >-
           --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       redis:
         image: redis:7-alpine
         ports:
@@ -37,7 +35,7 @@ jobs:
 
     env:
       NODE_ENV: test
-      DB_URI: mongodb://localhost:27017/E_Market_API_Test?replicaSet=rs0
+      DB_URI: mongodb://localhost:27017/E_Market_API_Test?directConnection=true
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: test-secret-key-for-ci
       JWT_EXPIRES_IN: 1d
@@ -56,22 +54,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Wait for MongoDB
+      - name: Start MongoDB as replica set
         run: |
-          echo "Waiting for MongoDB..."
-          timeout 30 bash -c 'until nc -z localhost 27017; do sleep 2; done'
-          echo "✅ MongoDB is ready!"
-
-      - name: Initialize MongoDB replica set
-        run: |
+          # Stop the service container MongoDB
+          docker stop $(docker ps -q --filter ancestor=mongo:7.0) || true
+          
+          # Start MongoDB with replica set
+          docker run -d --name mongodb-rs \
+            -p 27017:27017 \
+            mongo:7.0 \
+            --replSet rs0 \
+            --bind_ip_all
+          
+          # Wait for MongoDB to start
+          echo "Waiting for MongoDB to start..."
+          timeout 30 bash -c 'until docker exec mongodb-rs mongosh --eval "db.runCommand({ping: 1})" > /dev/null 2>&1; do sleep 2; done'
+          echo "✅ MongoDB is running!"
+          
+          # Initialize replica set
           echo "Initializing replica set..."
-          docker exec $(docker ps -qf "ancestor=mongo:7.0") mongosh --eval "
+          docker exec mongodb-rs mongosh --eval '
             rs.initiate({
-              _id: 'rs0',
-              members: [{ _id: 0, host: 'localhost:27017' }]
+              _id: "rs0",
+              members: [{ _id: 0, host: "localhost:27017" }]
             });
-            rs.status();
-          "
+          '
+          
+          # Wait for replica set to be ready
+          echo "Waiting for replica set..."
+          sleep 5
+          docker exec mongodb-rs mongosh --eval 'rs.status()'
           echo "✅ Replica set initialized!"
 
       - name: Wait for Redis
@@ -79,6 +91,9 @@ jobs:
           echo "Waiting for Redis..."
           timeout 30 bash -c 'until nc -z localhost 6379; do sleep 2; done'
           echo "✅ Redis is ready!"
+
+      - name: Update DB_URI for replica set
+        run: echo "DB_URI=mongodb://localhost:27017/E_Market_API_Test?replicaSet=rs0" >> $GITHUB_ENV
 
       - name: Run tests
         run: npm run test
@@ -88,3 +103,7 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t mern-api-image .
+
+      - name: Cleanup
+        if: always()
+        run: docker stop mongodb-rs && docker rm mongodb-rs || true
