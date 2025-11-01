@@ -1,4 +1,5 @@
 name: CI - E-Market MERN API
+
 on:
   push:
     branches:
@@ -36,7 +37,6 @@ jobs:
       NODE_ENV: test
       DB_URI: mongodb://localhost:27017/E_Market_API_Test
       REDIS_URL: redis://localhost:6379
-      # Add these critical env vars for your app
       JWT_SECRET: test-secret-key-for-ci
       JWT_EXPIRES_IN: 1d
       BCRYPT_ROUNDS: 10
@@ -49,17 +49,22 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
       
       - name: Install dependencies
         run: npm ci
       
-      # Wait a bit to ensure services are fully ready
-      - name: Wait for services
+      - name: Wait for MongoDB
         run: |
           echo "Waiting for MongoDB..."
-          timeout 30 bash -c 'until mongosh --eval "db.runCommand({ping: 1})" mongodb://localhost:27017/test; do sleep 2; done'
+          timeout 30 bash -c 'until nc -z localhost 27017; do sleep 2; done'
+          echo "MongoDB is ready!"
+      
+      - name: Wait for Redis
+        run: |
           echo "Waiting for Redis..."
-          timeout 30 bash -c 'until redis-cli -h localhost ping; do sleep 2; done'
+          timeout 30 bash -c 'until nc -z localhost 6379; do sleep 2; done'
+          echo "Redis is ready!"
       
       - name: Run tests
         run: npm run test
