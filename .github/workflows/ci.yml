@@ -17,10 +17,9 @@ jobs:
         image: mongo:7.0
         ports:
           - 27017:27017
+        # ✅ Start MongoDB with replSet using CMD instead of unsupported flags
+        command: ["--replSet", "rs0", "--bind_ip_all"]
         options: >-
-          --replSet rs0
-          --bind_ip_all
-          --oplogSize 128
           --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
           --health-interval 10s
           --health-timeout 5s
@@ -38,7 +37,7 @@ jobs:
 
     env:
       NODE_ENV: test
-      DB_URI: mongodb://localhost:27017/E_Market_API_Test
+      DB_URI: mongodb://localhost:27017/E_Market_API_Test?replicaSet=rs0
       REDIS_URL: redis://localhost:6379
       JWT_SECRET: test-secret-key-for-ci
       JWT_EXPIRES_IN: 1d
