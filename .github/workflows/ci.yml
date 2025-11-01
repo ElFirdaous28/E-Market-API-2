@@ -11,13 +11,16 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
+
     services:
       mongodb:
         image: mongo:7.0
         ports:
           - 27017:27017
         options: >-
+          --replSet rs0
+          --bind_ip_all
+          --oplogSize 128
           --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
           --health-interval 10s
           --health-timeout 5s
@@ -32,7 +35,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     env:
       NODE_ENV: test
       DB_URI: mongodb://localhost:27017/E_Market_API_Test
@@ -40,37 +43,49 @@ jobs:
       JWT_SECRET: test-secret-key-for-ci
       JWT_EXPIRES_IN: 1d
       BCRYPT_ROUNDS: 10
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Wait for MongoDB
         run: |
           echo "Waiting for MongoDB..."
           timeout 30 bash -c 'until nc -z localhost 27017; do sleep 2; done'
-          echo "MongoDB is ready!"
-      
+          echo "✅ MongoDB is ready!"
+
+      - name: Initialize MongoDB replica set
+        run: |
+          echo "Initializing replica set..."
+          docker exec $(docker ps -qf "ancestor=mongo:7.0") mongosh --eval "
+            rs.initiate({
+              _id: 'rs0',
+              members: [{ _id: 0, host: 'localhost:27017' }]
+            });
+            rs.status();
+          "
+          echo "✅ Replica set initialized!"
+
       - name: Wait for Redis
         run: |
           echo "Waiting for Redis..."
           timeout 30 bash -c 'until nc -z localhost 6379; do sleep 2; done'
-          echo "Redis is ready!"
-      
+          echo "✅ Redis is ready!"
+
       - name: Run tests
         run: npm run test
-      
+
       - name: Run coverage test
         run: npm run coverage
-      
+
       - name: Build Docker image
         run: docker build -t mern-api-image .
