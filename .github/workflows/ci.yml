@@ -98,9 +98,6 @@ jobs:
       - name: Run tests
         run: npm run test
 
-      - name: Run coverage test
-        run: npm run coverage
-
       - name: Build Docker image
         run: docker build -t mern-api-image .
 
